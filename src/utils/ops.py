@@ -27,7 +27,7 @@ class GraphUnet(nn.Module):
         hs = []
         org_h = h
         for i in range(self.l_n):
-            h = self.down_gcns[i](g, h)
+            h = self.down_gcns[i](g, h) # X=AXW
             adj_ms.append(g)
             down_outs.append(h)
             g, h, idx = self.pools[i](g, h)
@@ -55,7 +55,7 @@ class GCN(nn.Module):
 
     def forward(self, g, h):
         h = self.drop(h)
-        h = torch.matmul(g, h)
+        h = torch.matmul(g, h) # A'X   where A'=AD^-1
         h = self.proj(h)
         h = self.act(h)
         return h
@@ -67,17 +67,19 @@ class Pool(nn.Module):
         super(Pool, self).__init__()
         self.k = k
         self.sigmoid = nn.Sigmoid()
-        self.proj = nn.Linear(in_dim, 1)
+        self.proj = nn.Linear(in_dim, 1) # todo 这里的投影可以换成 HGCN, 学习拓扑结构作为分数(参考 SAGpooling)
         self.drop = nn.Dropout(p=p) if p > 0 else nn.Identity()
 
     def forward(self, g, h):
         Z = self.drop(h)
         weights = self.proj(Z).squeeze()
         scores = self.sigmoid(weights)
-        return top_k_graph(scores, g, h, self.k)
-
+        return top_k_graph(scores, g, h, self.k) # return  g, new_h, idx
 
 class Unpool(nn.Module):
+    '''
+        产生上采样顶点数的特征矩阵（只有当前存在的顶点特，即的行不为0 vextor,其他都为0 vector），然后通过GCN将其填成dense 矩阵
+    '''
 
     def __init__(self, *args):
         super(Unpool, self).__init__()
@@ -90,25 +92,25 @@ class Unpool(nn.Module):
 
 def top_k_graph(scores, g, h, k):
     num_nodes = g.shape[0]
-    values, idx = torch.topk(scores, max(2, int(k*num_nodes)))
+    values, idx = torch.topk(scores, max(2, int(k*num_nodes))) #
     new_h = h[idx, :]
     values = torch.unsqueeze(values, -1)
-    new_h = torch.mul(new_h, values)
+    new_h = torch.mul(new_h, values) # 对特征加权
     un_g = g.bool().float()
-    un_g = torch.matmul(un_g, un_g).bool().float()
+    un_g = torch.matmul(un_g, un_g).bool().float() # AA
     un_g = un_g[idx, :]
     un_g = un_g[:, idx]
     g = norm_g(un_g)
     return g, new_h, idx
 
 
-def norm_g(g):
+def norm_g(g): #todo norm -> hypergraph norimization
     degrees = torch.sum(g, 1)
     g = g / degrees
     return g
 
 
-class Initializer(object):
+class Initializer(object): # todo 参数初始化为什么要重新设计
 
     @classmethod
     def _glorot_uniform(cls, w):

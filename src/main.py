@@ -11,7 +11,7 @@ from utils.data_loader import FileLoader
 def get_args():
     parser = argparse.ArgumentParser(description='Args for graph predition')
     parser.add_argument('-seed', type=int, default=1, help='seed')
-    parser.add_argument('-data', default='DD', help='data folder name')
+    parser.add_argument('-data', default='PROTEINS', help='data folder name')
     parser.add_argument('-fold', type=int, default=1, help='fold (1..10)')
     parser.add_argument('-num_epochs', type=int, default=2, help='epochs')
     parser.add_argument('-batch', type=int, default=8, help='batch size')
@@ -24,7 +24,7 @@ def get_args():
     parser.add_argument('-drop_c', type=float, default=0.2, help='drop output')
     parser.add_argument('-act_n', type=str, default='ELU', help='network act')
     parser.add_argument('-act_c', type=str, default='ELU', help='output act')
-    parser.add_argument('-ks', nargs='+', type=float, default='0.9 0.8 0.7')
+    parser.add_argument('-ks', nargs='+', type=float, default=[0.9, 0.8, 0.7])
     parser.add_argument('-acc_file', type=str, default='re', help='acc file')
     args, _ = parser.parse_known_args()
     return args

@@ -34,7 +34,7 @@ class GraphData(object):
         cur_idx = self.idx[self.pos: self.pos+self.batch]
         data = [self.__getitem__(idx) for idx in cur_idx]
         self.pos += len(cur_idx)
-        gs, hs, labels = map(list, zip(*data))
+        gs, hs, labels = map(list, zip(*data)) # 一个 batchzh中的邻接阵，对应node features
         return len(gs), gs, hs, torch.LongTensor(labels)
 
     def loader(self, batch, shuffle, *args):

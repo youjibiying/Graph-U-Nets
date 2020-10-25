@@ -18,7 +18,7 @@ class GNet(nn.Module):
         self.out_drop = nn.Dropout(p=args.drop_c)
         Initializer.weights_init(self)
 
-    def forward(self, gs, hs, labels):
+    def forward(self, gs, hs, labels): # graph adj , node feateas
         hs = self.embed(gs, hs)
         logits = self.classify(hs)
         return self.metric(logits, labels)
@@ -32,7 +32,7 @@ class GNet(nn.Module):
         return hs
 
     def embed_one(self, g, h):
-        g = norm_g(g)
+        g = norm_g(g) #A/D^-1
         h = self.s_gcn(g, h)
         hs = self.g_unet(g, h)
         h = self.readout(hs)
@@ -42,7 +42,7 @@ class GNet(nn.Module):
         h_max = [torch.max(h, 0)[0] for h in hs]
         h_sum = [torch.sum(h, 0) for h in hs]
         h_mean = [torch.mean(h, 0) for h in hs]
-        h = torch.cat(h_max + h_sum + h_mean)
+        h = torch.cat(h_max + h_sum + h_mean) # 将上面的特征都展开拼成一列
         return h
 
     def classify(self, h):
